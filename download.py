@@ -133,7 +133,6 @@ class URL:
             except Exception as e:
                 print(f"Need the full relative path {e}")
         if self.scheme == "data":
-            print(self.path)
             html_substring = "html"
             if html_substring in self.path:
                 current_output = self.path.split(",", 1)
@@ -155,7 +154,10 @@ def load(url):
     if url.localFile == False and url.data == False: 
         show(body)
 def makeHTML(body):
-    print("here " + body)
+    print("<html>")
+    print("<body>" + body + "</body>")
+    print("</html>")
+    
 
 if __name__ == "__main__":
     # HTTP/1.1. Along with Host, send the Connection header in the request function with the value close
