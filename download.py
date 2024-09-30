@@ -10,18 +10,32 @@ class URL:
         # scheme will be https
         # url will be browser.engineering/http.html
         # we split on "one" (delimeter, 1) instance
+        substring_link = "://"
 
-        self.scheme, url = url.split("://", 1)
-        # assert, if True the code runs else an Assertion error is raised
-        assert self.scheme in ["http", "https", "file"]
+        
+        if substring_link in url:
+            self.scheme, url = url.split("://", 1)
+        else:
+
+            self.scheme, url = url.split(":", 1)
+            # assert, if True the code runs else an Assertion error is raised
+            assert self.scheme in ["http", "https", "file", "data"]
         
         if self.scheme == "file":
             self.localFile = True
+            self.data = False
+            self.path = url
+            self.host = None
+            self.port = None
+        elif self.scheme == "data":
+            self.localFile = False
+            self.data = True
             self.path = url
             self.host = None
             self.port = None
         else:
             self.localFile = False
+            self.data = False
             # seperate host from path
             # host comes before the first /
             # https://browser.engineering/http.html
@@ -61,6 +75,7 @@ class URL:
 
         # connect to host through port
         if self.host or self.port:
+            
             s.connect((self.host, self.port))
 
             # modular request headers
@@ -104,6 +119,26 @@ class URL:
             s.close()
             # return the body
             return content
+        
+        if self.scheme == "file":
+            try:
+                file_path = self.path
+                # print(file_path)
+                # new_file_path = file_path.strip('/')
+                # print(new_file_path)
+                f = open(file_path, 'r')
+                print(f.read())
+                # f = open(file_path, 'r')
+                # print(f.read())
+            except Exception as e:
+                print(f"Need the full relative path {e}")
+        if self.scheme == "data":
+            print(self.path)
+            html_substring = "html"
+            if html_substring in self.path:
+                current_output = self.path.split(",", 1)
+                makeHTML(current_output[1])
+            
 
     # print the text not the tags
 def show(body):
@@ -117,8 +152,10 @@ def show(body):
             print(c, end="")
 def load(url):
     body = url.request()
-    if url.localFile == False: 
+    if url.localFile == False and url.data == False: 
         show(body)
+def makeHTML(body):
+    print("here " + body)
 
 if __name__ == "__main__":
     # HTTP/1.1. Along with Host, send the Connection header in the request function with the value close
@@ -132,5 +169,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         load(URL(sys.argv[1]))  # Load the URL if provided
     else:
-        print("error")
+        error_path = ('error.html')
+        f = open(error_path, 'r')
+        print(f.read())
       
