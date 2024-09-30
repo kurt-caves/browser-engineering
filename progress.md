@@ -20,6 +20,10 @@ run data: python3 download.py data:text/html,Hello world
     -   <body> Hello world </body>
     - </html>
 
+# 1-4 entities
+&lt;div&gt;Hello&lt;/div&gt;
+-> <div>Hello</div>
+
 
 - recommended code:
 
@@ -52,3 +56,4 @@ def show(body):
                 entity += c
             else:
                 print(c, end="")
+
