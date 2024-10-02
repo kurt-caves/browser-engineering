@@ -11,31 +11,49 @@ class URL:
         # url will be browser.engineering/http.html
         # we split on "one" (delimeter, 1) instance
         substring_link = "://"
+        view_source_substring = "view-source"
 
+        
         
         if substring_link in url:
             self.scheme, url = url.split("://", 1)
+            # print("scheme: " + self.scheme)
         else:
 
             self.scheme, url = url.split(":", 1)
+            
             # assert, if True the code runs else an Assertion error is raised
-            assert self.scheme in ["http", "https", "file", "data"]
+            assert self.scheme in ["http", "https", "file", "data", "view-source:https"]
         
+       
         if self.scheme == "file":
             self.localFile = True
             self.data = False
             self.path = url
             self.host = None
             self.port = None
+            self.viewsource = False
         elif self.scheme == "data":
             self.localFile = False
             self.data = True
             self.path = url
             self.host = None
             self.port = None
+            self.viewsource = False
+        elif self.scheme == "view-source:https":
+            self.viewsource = True
+            self.localFile = False
+            self.data = False
+            self.host, url = url.split("/", 1)
+            self.path = "/" + url
+            # print("self.host " , self.host)
+            # print("self.path ", self.path)
+
         else:
             self.localFile = False
             self.data = False
+            self.viewsource = False
+            
             # seperate host from path
             # host comes before the first /
             # https://browser.engineering/http.html
@@ -45,10 +63,13 @@ class URL:
                 # url will be http.html
             self.host, url = url.split("/", 1)
             self.path = "/" + url
+            # print("self.host " , self.host)
+            # print("self.path ", self.path)
 
             # if there is something like http://localhost:8000/
             # the port is 8000
             if ":" in self.host:
+                
                 self.host, port = self.host.split(":", 1)
                 self.port = int(port)
 
@@ -71,11 +92,17 @@ class URL:
             ctx = ssl.create_default_context()
             s = ctx.wrap_socket(s, server_hostname=self.host)
             self.port = 443
+        elif self.scheme == "view-source:https":
+            ctx = ssl.create_default_context()
+            s = ctx.wrap_socket(s, server_hostname=self.host)
+            self.port = 443
         
 
         # connect to host through port
         if self.host or self.port:
-            
+            # print("here connect")
+            # print("self.host: " + self.host)
+            # print("self.port: " , self.port)
             s.connect((self.host, self.port))
 
             # modular request headers
@@ -109,6 +136,7 @@ class URL:
                 if line == "\r\n": break
                 header, value = line.split(":", 1)
                 response_headers[header.casefold()] = value.strip()
+            print(response_headers)
 
             # prevent unusal headers?
             assert "transfer-encoding" not in response_headers
@@ -137,6 +165,9 @@ class URL:
             if html_substring in self.path:
                 current_output = self.path.split(",", 1)
                 makeHTML(current_output[1])
+        
+
+        
             
 
     # print the text not the tags
@@ -150,32 +181,39 @@ def show(body):
             in_tag = False
         elif not in_tag:
             print(c, end="")
-        else:
-            if c == "&":
-                    entity = "&"
-            elif c == ";":
-                entity = ""
-            elif entity:
-                entity += c
-                if entity == "&lt":
-                    print("<", end="")
+        # else:
+        #     if c == "&":
+        #             entity = "&"
+        #     elif c == ";":
+        #         entity = ""
+        #     elif entity:
+        #         entity += c
+        #         if entity == "&lt":
+        #             print("<", end="")
                     
-                elif entity == "&gt":
-                    print(">", end="")
-            else:
-                print(c, end="")
+        #         elif entity == "&gt":
+        #             print(">", end="")
+        #     else:
+        #         print(c, end="")
             
 
         
 
 def load(url):
     body = url.request()
-    if url.localFile == False and url.data == False: 
+    if url.localFile == False and url.data == False and url.viewsource == False: 
         show(body)
+    if url.viewsource:
+        print("here at show")
+        viewSource(url)
 def makeHTML(body):
     print("<html>")
     print("<body>" + body + "</body>")
     print("</html>")
+def viewSource(url):
+    body = url.request()
+    for c in body:
+        print(c, end="")
     
 
 if __name__ == "__main__":
