@@ -142,6 +142,7 @@ class URL:
     # print the text not the tags
 def show(body):
     in_tag = False
+    entity = ""
     for c in body:
         if c == "<":
             in_tag = True
@@ -149,6 +150,24 @@ def show(body):
             in_tag = False
         elif not in_tag:
             print(c, end="")
+        else:
+            if c == "&":
+                    entity = "&"
+            elif c == ";":
+                entity = ""
+            elif entity:
+                entity += c
+                if entity == "&lt":
+                    print("<", end="")
+                    
+                elif entity == "&gt":
+                    print(">", end="")
+            else:
+                print(c, end="")
+            
+
+        
+
 def load(url):
     body = url.request()
     if url.localFile == False and url.data == False: 

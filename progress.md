@@ -24,36 +24,5 @@ run data: python3 download.py data:text/html,Hello world
 &lt;div&gt;Hello&lt;/div&gt;
 -> <div>Hello</div>
 
-
-- recommended code:
-
-def show(body):
-    in_tag = False
-    entity = ""  # Variable to collect entity characters
-    for c in body:
-        if c == "<":
-            in_tag = True
-            print("<", end="")
-        elif c == ">":
-            in_tag = False
-            print(">", end="")
-        elif in_tag:
-            print(c, end="")
-        else:
-            if c == "&":  # Start of an entity
-                entity = "&"
-            elif c == ";":  # End of an entity
-                entity += ";"
-                # Handle the recognized entity
-                if entity == "&lt;":
-                    print("<", end="")
-                elif entity == "&gt;":
-                    print(">", end="")
-                else:
-                    print(entity, end="")  # Print unrecognized entities as is
-                entity = ""  # Reset entity
-            elif entity:  # If we are collecting an entity
-                entity += c
-            else:
-                print(c, end="")
+# 1-5 view source
 
