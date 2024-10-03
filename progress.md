@@ -44,4 +44,8 @@ Cache-Control: max-age=0
 
 
 # 1-5 Keep Alive
+- currently we are making a new socket everytime we send a request.
+- need to create a socket once and keep the connection open
+- for another request we use the same socket
+- how do we send multiple requests?
 

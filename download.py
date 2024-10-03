@@ -53,6 +53,7 @@ class URL:
             self.localFile = False
             self.data = False
             self.viewsource = False
+            self.socket = None
             
             # seperate host from path
             # host comes before the first /
@@ -75,11 +76,12 @@ class URL:
 
     # connect to host
     # talk to another computer
-    # address family - how to find the other computer
-    # type - the type of conversation
-    # protocol - how to establish a connection
+    
     def request(self):
         # call the socket constructor the module we imported
+        # address family - how to find the other computer
+        # type - the type of conversation
+        # protocol - how to establish a connection
         s = socket.socket(
             family=socket.AF_INET,
             type=socket.SOCK_STREAM,
@@ -120,29 +122,40 @@ class URL:
             request += request_headers["user-agent"]
             request += request_headers["close-conn"]
             request += request_headers["end-request"]
-            # convert our string to bytes
+            # convert our string to bytes send the request
             s.send(request.encode("utf-8"))
             # treat socket like a file that contains bytes from the server
             response = s.makefile("r", encoding="utf8", newline="\r\n")
+            print("response: " ,response)
             # return one line from the response
+            # should 200 OK
             statusline = response.readline()
+            print("status line: ", statusline)
             # split response
             version, status, explanation = statusline.split(" ", 2)
 
             # make a dicitionary of header value pairs, use lower case
             response_headers = {}
             while True:
+                # read till "\r\n"
                 line = response.readline()
                 if line == "\r\n": break
+                # header is before : value is after
                 header, value = line.split(":", 1)
+                # print("header: ", header)
+                # print("value: ", value)
+                # header becomes lowercase and white space is stripped
                 response_headers[header.casefold()] = value.strip()
             print(response_headers)
 
             # prevent unusal headers?
+            #chunked encoding
             assert "transfer-encoding" not in response_headers
+            # no compression is used
             assert "content-encoding" not in response_headers
 
             # send data after headers
+            # this is the actual body of the page
             content = response.read()
             s.close()
             # return the body
