@@ -76,6 +76,16 @@ class URL:
 
     # connect to host
     # talk to another computer
+
+    def set_port_ssl(self, s):
+        if self.scheme == "http":
+            self.port = 80
+        elif self.scheme == "https" or "view-source:https":
+            ctx = ssl.create_default_context()
+            s = ctx.wrap_socket(s, server_hostname=self.host)
+            self.port = 443
+        return s
+        
     
     def request(self):
         # call the socket constructor the module we imported
@@ -88,17 +98,8 @@ class URL:
             proto=socket.IPPROTO_TCP,
         )
 
-        if self.scheme == "http":
-            self.port = 80
-        elif self.scheme == "https":
-            ctx = ssl.create_default_context()
-            s = ctx.wrap_socket(s, server_hostname=self.host)
-            self.port = 443
-        elif self.scheme == "view-source:https":
-            ctx = ssl.create_default_context()
-            s = ctx.wrap_socket(s, server_hostname=self.host)
-            self.port = 443
-        
+        # self is passed as first argument and s as second
+        s = self.set_port_ssl(s)
 
         # connect to host through port
         if self.host or self.port:
@@ -146,7 +147,14 @@ class URL:
                 # print("value: ", value)
                 # header becomes lowercase and white space is stripped
                 response_headers[header.casefold()] = value.strip()
-            print(response_headers)
+            
+            # need to get the content length from the response headers
+            # and cast it to an int so that we can read the specific number
+            # of bytes
+            bytes_to_read = response_headers["content-length"]
+            bytes_to_read = int(bytes_to_read)
+            
+
 
             # prevent unusal headers?
             #chunked encoding
@@ -156,7 +164,8 @@ class URL:
 
             # send data after headers
             # this is the actual body of the page
-            content = response.read()
+            # only read as much as is given in response header
+            content = response.read(bytes_to_read)
             s.close()
             # return the body
             return content
@@ -178,8 +187,11 @@ class URL:
             if html_substring in self.path:
                 current_output = self.path.split(",", 1)
                 makeHTML(current_output[1])
+    
+    
         
-
+    
+    
         
             
 
@@ -227,6 +239,8 @@ def viewSource(url):
     body = url.request()
     for c in body:
         print(c, end="")
+
+
     
 
 if __name__ == "__main__":
