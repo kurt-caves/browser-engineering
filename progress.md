@@ -43,7 +43,7 @@ Cache-Control: max-age=0
 -> <div>Hello</div>
 
 
-# 1-5 Keep Alive
+# 1-6 Keep Alive
 10/02/24
 - currently we are making a new socket everytime we send a request.
 - need to create a socket once and keep the connection open
@@ -51,4 +51,8 @@ Cache-Control: max-age=0
 - how do we send multiple requests?
 10/03/24
 - we can keep the connection alive using "keep-alive" and only reading the specific amount of bytes given to use from the 
+- putting a pause on this because I dont totally understand it
+
+#1-7 Redirects
+
 

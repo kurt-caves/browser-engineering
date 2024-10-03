@@ -54,6 +54,7 @@ class URL:
             self.data = False
             self.viewsource = False
             self.socket = None
+            self.redirect = False
             
             # seperate host from path
             # host comes before the first /
@@ -74,19 +75,7 @@ class URL:
                 self.host, port = self.host.split(":", 1)
                 self.port = int(port)
 
-    # connect to host
-    # talk to another computer
 
-    def set_port_ssl(self, s):
-        if self.scheme == "http":
-            self.port = 80
-        elif self.scheme == "https" or "view-source:https":
-            ctx = ssl.create_default_context()
-            s = ctx.wrap_socket(s, server_hostname=self.host)
-            self.port = 443
-        return s
-        
-    
     def request(self):
         # call the socket constructor the module we imported
         # address family - how to find the other computer
@@ -103,73 +92,9 @@ class URL:
 
         # connect to host through port
         if self.host or self.port:
-            # print("here connect")
-            # print("self.host: " + self.host)
-            # print("self.port: " , self.port)
-            s.connect((self.host, self.port))
-
-            # modular request headers
-            request_headers = {
-                'get_request' : "GET {} HTTP/1.1\r\n".format(self.path),
-                'host' : "Host: {}\r\n".format(self.host),
-                'user-agent' : "User-Agent: Kurts Browser\r\n",
-                'close-conn' : "Connection: keep-alive\r\n",
-                'end-request' : "\r\n",
-            }
-            # we are doing the Method, Path and HTTP Version
-            # request = "GET {} HTTP/1.1\r\n".format(self.path)
-            request = request_headers["get_request"]
-            request += request_headers["host"]
-            request += request_headers["user-agent"]
-            request += request_headers["close-conn"]
-            request += request_headers["end-request"]
-            # convert our string to bytes send the request
-            s.send(request.encode("utf-8"))
-            # treat socket like a file that contains bytes from the server
-            response = s.makefile("r", encoding="utf8", newline="\r\n")
-            print("response: " ,response)
-            # return one line from the response
-            # should 200 OK
-            statusline = response.readline()
-            print("status line: ", statusline)
-            # split response
-            version, status, explanation = statusline.split(" ", 2)
-
-            # make a dicitionary of header value pairs, use lower case
-            response_headers = {}
-            while True:
-                # read till "\r\n"
-                line = response.readline()
-                if line == "\r\n": break
-                # header is before : value is after
-                header, value = line.split(":", 1)
-                # print("header: ", header)
-                # print("value: ", value)
-                # header becomes lowercase and white space is stripped
-                response_headers[header.casefold()] = value.strip()
-            
-            # need to get the content length from the response headers
-            # and cast it to an int so that we can read the specific number
-            # of bytes
-            bytes_to_read = response_headers["content-length"]
-            bytes_to_read = int(bytes_to_read)
-            
-
-
-            # prevent unusal headers?
-            #chunked encoding
-            assert "transfer-encoding" not in response_headers
-            # no compression is used
-            assert "content-encoding" not in response_headers
-
-            # send data after headers
-            # this is the actual body of the page
-            # only read as much as is given in response header
-            content = response.read(bytes_to_read)
-            s.close()
-            # return the body
+            content = self.connect_socket(s)
             return content
-        
+            
         if self.scheme == "file":
             try:
                 file_path = self.path
@@ -188,7 +113,83 @@ class URL:
                 current_output = self.path.split(",", 1)
                 makeHTML(current_output[1])
     
+    def set_port_ssl(self, s):
+        if self.scheme == "http":
+            self.port = 80
+        elif self.scheme == "https" or "view-source:https":
+            ctx = ssl.create_default_context()
+            s = ctx.wrap_socket(s, server_hostname=self.host)
+            self.port = 443
+        return s
     
+    def connect_socket(self, s):
+        # print("here connect")
+        # print("self.host: " + self.host)
+        # print("self.port: " , self.port)
+        s.connect((self.host, self.port))
+        # modular request headers
+        request_headers = {
+            'get_request' : "GET {} HTTP/1.1\r\n".format(self.path),
+            'host' : "Host: {}\r\n".format(self.host),
+            'user-agent' : "User-Agent: Kurts Browser\r\n",
+            'connection' : "Connection: keep-alive\r\n",
+            'end-request' : "\r\n",
+        }
+        # we are doing the Method, Path and HTTP Version
+        # request = "GET {} HTTP/1.1\r\n".format(self.path)
+        request = request_headers["get_request"]
+        request += request_headers["host"]
+        request += request_headers["user-agent"]
+        request += request_headers["connection"]
+        request += request_headers["end-request"]
+        # convert our string to bytes send the request
+        s.send(request.encode("utf-8"))
+        # treat socket like a file that contains bytes from the server
+        response = s.makefile("r", encoding="utf8", newline="\r\n")
+        print("response: " ,response)
+        # return one line from the response
+        # should 200 OK
+        statusline = response.readline()
+        
+        # split response
+        version, status, explanation = statusline.split(" ", 2)
+        # make a dicitionary of header value pairs, use lower case
+        response_headers = {}
+        while True:
+            # read till "\r\n"
+            line = response.readline()
+            if line == "\r\n": break
+            # header is before : value is after
+            header, value = line.split(":", 1)
+            # print("header: ", header)
+            # print("value: ", value)
+            # header becomes lowercase and white space is stripped
+            response_headers[header.casefold()] = value.strip()
+        if '301' in statusline and 'location' in response_headers:
+            if self.redirect != True:
+                print("we have a 301")
+                print(response_headers['location'])
+                load(URL(response_headers['location']))
+                
+        print("status line: ", statusline)
+        print("type of status line: ", type(statusline))
+        print(response_headers)
+        # need to get the content length from the response headers
+        # and cast it to an int so that we can read the specific number
+        # of bytes
+        bytes_to_read = response_headers["content-length"]
+        bytes_to_read = int(bytes_to_read)
+        # prevent unusal headers?
+        #chunked encoding
+        assert "transfer-encoding" not in response_headers
+        # no compression is used
+        assert "content-encoding" not in response_headers
+        # send data after headers
+        # this is the actual body of the page
+        # only read as much as is given in response header
+        content = response.read(bytes_to_read)
+        s.close()
+        return content
         
     
     
