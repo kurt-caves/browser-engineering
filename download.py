@@ -110,7 +110,7 @@ class URL:
                 'get_request' : "GET {} HTTP/1.1\r\n".format(self.path),
                 'host' : "Host: {}\r\n".format(self.host),
                 'user-agent' : "User-Agent: Kurts Browser\r\n",
-                'close-conn' : "Connection: close\r\n",
+                'close-conn' : "Connection: keep-alive\r\n",
                 'end-request' : "\r\n",
             }
             # we are doing the Method, Path and HTTP Version
