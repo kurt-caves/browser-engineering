@@ -86,6 +86,7 @@ class URL:
             type=socket.SOCK_STREAM,
             proto=socket.IPPROTO_TCP,
         )
+        print("s type: ",type(s))
 
         # self is passed as first argument and s as second
         s = self.set_port_ssl(s)
@@ -126,7 +127,14 @@ class URL:
         # print("here connect")
         # print("self.host: " + self.host)
         # print("self.port: " , self.port)
-        s.connect((self.host, self.port))
+        if s or s.closed:
+            s = socket.socket(
+            family=socket.AF_INET,
+            type=socket.SOCK_STREAM,
+            proto=socket.IPPROTO_TCP,
+            )
+            s = self.set_port_ssl(s)
+            s.connect((self.host, self.port))
         # modular request headers
         request_headers = {
             'get_request' : "GET {} HTTP/1.1\r\n".format(self.path),
@@ -170,6 +178,14 @@ class URL:
                 print("we have a 301")
                 print(response_headers['location'])
                 load(URL(response_headers['location']))
+        # print("type of resonse headers: ", type(response_headers))
+        # if response_headers['connection'] == 'keep-alive':
+        #     print("we have a keep-alive signal")
+        if 'connection' in response_headers and response_headers['connection'] == 'closed':
+            s = s.close()
+        else:
+            self.socket = s
+
                 
         print("status line: ", statusline)
         print("type of status line: ", type(statusline))
